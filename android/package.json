@@ -1,0 +1,18 @@
+{
+  "name": "kuma-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kuma pour Android : transcription et compte rendu de discussions",
+  "scripts": {
+    "prepare-web": "node scripts/prepare-web.js",
+    "android:create": "npm run prepare-web && npx cap add android && node scripts/patch-android.js",
+    "android:sync": "npm run prepare-web && npx cap sync android && node scripts/patch-android.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kuma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Mise en page : outil à deux volets — capter la parole à gauche, compte rendu à droite.
+   Palette : indigo des teintures, ocre du banco, neutres sable. */
+:root{
+  --bg:#f5f4f0; --surface:#fffefb; --ink:#1d1f2a; --muted:#646676; --line:#dfdcd3;
+  --indigo:#27348b; --indigo-soft:#e6e8f6; --ochre:#a8661a; --ochre-soft:#f6ead9;
+  --rec:#c0322b; --ok:#2f7a4d; --err-bg:#fbe9e7;
+  --f-display:"Familjen Grotesk",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#14151c; --surface:#1c1e27; --ink:#ecebe6; --muted:#a3a4b2; --line:#30323e;
+  --indigo:#9aa6ff; --indigo-soft:#252a4a; --ochre:#e0a456; --ochre-soft:#33281a;
+  --rec:#ff6b62; --ok:#6fcf97; --err-bg:#3a1f1d; color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1180px;margin:0 auto}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding-block:28px 22px;border-bottom:1px solid var(--line);margin-bottom:24px}
+h1{font:700 2rem/1 var(--f-display);margin:0;letter-spacing:-.02em}
+h1 span{color:var(--ochre)}
+.tagline{color:var(--muted);margin:0}
+.status{margin-left:auto;font:400 .78rem var(--f-mono);color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+.status b{font-weight:400;color:var(--ink)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:1px;background:var(--muted)}
+.dot.ok{background:var(--ok)} .dot.no{background:var(--rec)}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+h2{font:700 1.15rem/1.2 var(--f-display);margin:0;display:flex;align-items:center;gap:8px}
+h2 small{font:400 .75rem var(--f-mono);color:var(--muted);margin-left:auto}
+label.lbl{display:block;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+select,input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+select:focus,input:focus,textarea:focus,button:focus-visible,.drop:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{flex:1 1 200px;min-width:0}
+.custom{display:flex;gap:8px;margin-top:8px}
+.custom[hidden]{display:none}
+button{font:700 .95rem var(--f-body);border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--indigo)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:var(--indigo);border-color:var(--indigo);color:var(--surface)}
+button.primary:hover:not(:disabled){filter:brightness(1.1)}
+.capture{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;background:var(--indigo-soft);border-radius:var(--r);padding:16px}
+.recbtn{width:84px;height:84px;border-radius:50%;border:none;background:var(--rec);color:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px color-mix(in srgb,var(--rec) 18%,transparent)}
+.recbtn svg{width:30px;height:30px}
+.recbtn.on{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 14px color-mix(in srgb,var(--rec) 8%,transparent)}}
+@media (prefers-reduced-motion:reduce){.recbtn.on{animation:none}}
+.timer{font:400 1.9rem/1 var(--f-mono);font-variant-numeric:tabular-nums}
+.hint{font-size:.88rem;color:var(--muted);margin:4px 0 0}
+.meter{height:6px;border-radius:3px;background:color-mix(in srgb,var(--indigo) 15%,transparent);overflow:hidden;margin-top:10px}
+.meter i{display:block;height:100%;width:0;background:var(--indigo);transition:width .08s}
+.drop{border:1.5px dashed var(--line);border-radius:var(--r);padding:16px;text-align:center;color:var(--muted);cursor:pointer}
+.drop.over{border-color:var(--indigo);background:var(--indigo-soft);color:var(--ink)}
+.drop strong{color:var(--indigo)}
+.segments{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;max-height:420px;overflow:auto;background:var(--bg)}
+.seg{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.seg:last-child{border-bottom:none}
+.seg time{font:400 .78rem/1.9 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.seg .t{outline:none;white-space:pre-wrap;overflow-wrap:anywhere}
+.seg .t:focus{background:var(--surface);border-radius:4px;box-shadow:0 0 0 2px var(--indigo)}
+.seg.pending .t{color:var(--muted);font-style:italic}
+.seg.error .t{color:var(--rec)}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.actions .grow{flex:1}
+.meta{font:400 .78rem var(--f-mono);color:var(--muted)}
+.notice{border-radius:8px;padding:10px 12px;font-size:.92rem;background:var(--err-bg);color:var(--ink)}
+.notice[hidden]{display:none}
+.summary{border-top:1px solid var(--line);padding-top:6px;min-height:120px;overflow-wrap:anywhere}
+.summary h3{font:700 1rem var(--f-display);margin:18px 0 6px;color:var(--ochre);text-transform:uppercase;letter-spacing:.05em}
+.summary ul{margin:0;padding-left:20px}
+.summary li{margin:3px 0}
+.summary p{margin:6px 0}
+.summary .placeholder{color:var(--muted);background:var(--ochre-soft);border-radius:8px;padding:14px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.sticky{position:sticky;top:16px}
+.chip{font:400 .78rem var(--f-mono);padding:4px 10px;border-radius:999px;background:var(--bg)}
+.setup{margin-bottom:24px;border-color:var(--indigo)}
+.setup p{margin:0;max-width:62ch}
+.setup ol{margin:0;padding-left:20px}
+.setup .custom{margin:0}
+.setup .custom input{font-size:1.1rem}
+@media (max-width:860px){.sticky{position:static}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Kuma<span>.</span></h1>
+  <p class="tagline">Transcrire une discussion, puis en faire le compte rendu.</p>
+  <div class="status"><span id="status"><span><i class="dot"></i>connexion au serveur…</span></span>
+    <button class="chip" id="srvBtn" type="button" hidden>Ordinateur : <b id="srvName"></b></button></div>
+</header>
+
+<section class="panel setup" id="setup" hidden aria-labelledby="h-setup">
+  <h2 id="h-setup">Connecter le téléphone à l'ordinateur</h2>
+  <ol>
+    <li>Sur l'ordinateur, double-cliquez sur <b>Demarrer-Kuma</b>.</li>
+    <li>La fenêtre affiche une ligne comme <b>192.168.1.25:8000</b>.</li>
+    <li>Tapez cette adresse ci-dessous. Le téléphone et l'ordinateur doivent être sur le <b>même Wi-Fi</b>.</li>
+  </ol>
+  <div class="custom">
+    <input type="text" id="srvInput" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="192.168.1.25:8000">
+    <button class="primary" id="srvSave" type="button">Se connecter</button>
+  </div>
+  <div class="notice" id="srvErr" role="alert" hidden></div>
+</section>
+
+<div class="grid">
+  <!-- Volet 1 : capter la parole -->
+  <section class="panel" aria-labelledby="h-cap">
+    <h2 id="h-cap">1. Enregistrer ou importer</h2>
+
+    <div class="row">
+      <div>
+        <label class="lbl" for="lang">Langue parlée</label>
+        <select id="lang"></select>
+        <div class="custom" id="customWrap" hidden>
+          <input type="text" id="customCode" placeholder="code, ex. bam_Latn" autocomplete="off">
+        </div>
+      </div>
+      <div>
+        <label class="lbl" for="chunk">Envoi pendant l'enregistrement</label>
+        <select id="chunk">
+          <option value="15">toutes les 15 s</option>
+          <option value="25" selected>toutes les 25 s</option>
+          <option value="35">toutes les 35 s</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="capture">
+      <button class="recbtn" id="recBtn" aria-label="Démarrer l'enregistrement">
+        <svg viewBox="0 0 24 24" fill="currentColor" id="recIcon"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0zM11 18h2v3h-2z"/></svg>
+      </button>
+      <div>
+        <div class="timer" id="timer">00:00</div>
+        <p class="hint" id="recHint">Appuyez pour enregistrer au micro. Le texte apparaît par tranches.</p>
+        <div class="meter" aria-hidden="true"><i id="level"></i></div>
+      </div>
+    </div>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Importer un fichier audio">
+      <strong>Importer un fichier audio</strong> ou le glisser ici<br>
+      <span class="meta">mp3, wav, m4a, ogg, webm, opus, vidéo mp4…</span>
+      <input type="file" id="file" accept="audio/*,video/*" hidden>
+    </div>
+
+    <div class="notice" id="capErr" role="alert" hidden></div>
+
+    <div>
+      <div class="actions" style="margin-bottom:8px">
+        <h2 class="grow" style="font-size:1rem">Transcription <small id="segMeta"></small></h2>
+        <button id="clearBtn" type="button">Effacer</button>
+      </div>
+      <div class="segments" id="segments" aria-live="polite">
+        <div class="empty" id="empty">Le texte transcrit s'affichera ici. Vous pourrez le corriger en cliquant dessus.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Volet 2 : compte rendu -->
+  <section class="panel sticky" aria-labelledby="h-sum">
+    <h2 id="h-sum">2. Compte rendu</h2>
+    <div class="row">
+      <div>
+        <label class="lbl" for="outLang">Langue du compte rendu</label>
+        <select id="outLang">
+          <option>français</option><option>anglais</option><option>bambara</option>
+          <option>arabe</option><option>portugais</option><option>allemand</option><option>chinois</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="lbl" for="ctx">Contexte (facultatif)</label>
+      <input type="text" id="ctx" placeholder="ex. réunion du comité de gestion du marché, 3 participants" autocomplete="off">
+    </div>
+    <div class="actions">
+      <button class="primary" id="sumBtn" type="button" disabled>Générer le compte rendu</button>
+      <button id="copyBtn" type="button" disabled>Copier</button>
+      <button id="dlBtn" type="button" disabled>Télécharger (.txt)</button>
+      <button id="copyAllBtn" type="button" disabled hidden>Tout copier</button>
+    </div>
+    <div class="notice" id="sumErr" role="alert" hidden></div>
+    <div class="summary" id="summary">
+      <div class="placeholder">Une fois la transcription faite, le compte rendu donnera : un résumé, les points clés, les décisions, les actions à faire (qui, quoi, quand) et les passages à vérifier.</div>
+    </div>
+  </section>
+</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = { segments: [], summary: "", recording: false, startAt: 0, queue: Promise.resolve() };
+let cfg = { languages: [] };
+
+/* ---------- connexion au serveur ---------- */
+const isApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+function store(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+function load(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function normServer(v) {
+  v = (v || "").trim().replace(/\/+$/, "");
+  if (!v) return "";
+  if (!/^https?:\/\//i.test(v)) v = "http://" + v;
+  if (!/:\d+$/.test(v.replace(/^https?:\/\//i, ""))) v += ":8000";
+  return v;
+}
+// Dans le navigateur de l'ordinateur, la page vient du serveur lui-même : adresse vide.
+state.server = isApp ? (load("kuma.server") || "") : "";
+const api = path => state.server + path;
+
+function showSetup(msg) {
+  $("#setup").hidden = false;
+  $("#srvInput").value = (state.server || "").replace(/^http:\/\//, "");
+  showErr($("#srvErr"), msg || "");
+  $("#status").innerHTML = '<span><i class="dot no"></i>pas connecté</span>';
+}
+async function connect() {
+  if (isApp && !state.server) { showSetup(); return false; }
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 6000);
+    cfg = await (await fetch(api("/api/config"), { signal: ctl.signal })).json();
+    clearTimeout(t);
+  } catch {
+    if (isApp) showSetup("Impossible de joindre l'ordinateur à cette adresse. Vérifiez que Kuma est lancé, que l'adresse est exacte et que les deux appareils sont sur le même Wi-Fi.");
+    else $("#status").innerHTML = '<span><i class="dot no"></i>serveur injoignable</span>';
+    return false;
+  }
+  $("#setup").hidden = true;
+  if (isApp) { $("#srvBtn").hidden = false; $("#srvName").textContent = state.server.replace(/^https?:\/\//, ""); }
+  fillLanguages();
+  const asrOk = cfg.asr_engine !== "demo";
+  $("#status").innerHTML =
+    `<span><i class="dot ${asrOk ? "ok" : "no"}"></i>transcription : <b>${asrOk ? esc(cfg.asr_model) : "mode démo"}</b></span>` +
+    `<span><i class="dot ${cfg.summary_ready ? "ok" : "no"}"></i>résumé : <b>${cfg.summary_ready ? "prêt" : "clé API manquante"}</b></span>`;
+  return true;
+}
+function fillLanguages() {
+  const sel = $("#lang"), groups = {};
+  sel.innerHTML = "";
+  sel.append(new Option("Détection automatique (moins précis)", ""));
+  for (const l of cfg.languages) {
+    if (!groups[l.group]) { groups[l.group] = document.createElement("optgroup"); groups[l.group].label = l.group; sel.append(groups[l.group]); }
+    groups[l.group].append(new Option(l.label, l.code));
+  }
+  const other = document.createElement("optgroup"); other.label = "Autre";
+  other.append(new Option("Autre langue (saisir le code)…", "__custom"));
+  sel.append(other);
+  sel.value = "fra_Latn";
+  const saved = load("kuma.lang");
+  if (saved != null && [...sel.options].some(o => o.value === saved)) sel.value = saved;
+  syncCustom();
+}
+$("#srvSave").onclick = async () => {
+  const v = normServer($("#srvInput").value);
+  if (!v) { showErr($("#srvErr"), "Tapez l'adresse affichée sur l'ordinateur, par exemple 192.168.1.25:8000."); return; }
+  $("#srvSave").disabled = true; $("#srvSave").textContent = "Connexion…";
+  state.server = v;
+  if (await connect()) store("kuma.server", v);
+  $("#srvSave").disabled = false; $("#srvSave").textContent = "Se connecter";
+};
+$("#srvInput").addEventListener("keydown", e => e.key === "Enter" && $("#srvSave").click());
+$("#srvBtn").onclick = () => showSetup();
+if (isApp) { $("#dlBtn").hidden = true; $("#copyAllBtn").hidden = false; }
+connect();
+
+function syncCustom() {
+  $("#customWrap").hidden = $("#lang").value !== "__custom";
+  store("kuma.lang", $("#lang").value);
+}
+$("#lang").addEventListener("change", syncCustom);
+function currentLang() {
+  const v = $("#lang").value;
+  return v === "__custom" ? $("#customCode").value.trim() : v;
+}
+function langLabel() {
+  const o = $("#lang").selectedOptions[0];
+  return $("#lang").value === "__custom" ? currentLang() || "inconnue" : (o ? o.text : "inconnue");
+}
+
+/* ---------- segments de transcription ---------- */
+const fmt = s => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+let segCounter = 0;
+function addSegment(label) {
+  const seg = { id: ++segCounter, label, text: "", status: "pending" };
+  state.segments.push(seg); render(); return seg;
+}
+function render() {
+  const box = $("#segments");
+  box.querySelectorAll(".seg").forEach(n => n.remove());
+  $("#empty").hidden = state.segments.length > 0;
+  for (const s of state.segments) {
+    const row = document.createElement("div");
+    row.className = "seg " + (s.status === "done" ? "" : s.status);
+    const t = document.createElement("time"); t.textContent = s.label;
+    const p = document.createElement("div"); p.className = "t";
+    if (s.status === "pending") p.innerHTML = '<span class="spin"></span>transcription en cours…';
+    else if (s.status === "error") p.textContent = s.text;
+    else {
+      p.textContent = s.text || "(silence)";
+      p.contentEditable = "true"; p.spellcheck = false;
+      p.addEventListener("input", () => { s.text = p.textContent; updateButtons(); });
+    }
+    row.append(t, p); box.append(row);
+  }
+  box.scrollTop = box.scrollHeight;
+  const done = state.segments.filter(s => s.status === "done");
+  const words = fullTranscript().split(/\s+/).filter(Boolean).length;
+  $("#segMeta").textContent = done.length ? `${done.length} extrait(s) · ${words} mots` : "";
+  updateButtons();
+}
+function fullTranscript() {
+  return state.segments.filter(s => s.status === "done" && s.text).map(s => s.text.trim()).join("\n");
+}
+function updateButtons() {
+  const busy = state.segments.some(s => s.status === "pending");
+  $("#sumBtn").disabled = !fullTranscript() || busy;
+  $("#dlBtn").disabled = !fullTranscript();
+  $("#copyAllBtn").disabled = !fullTranscript();
+}
+$("#clearBtn").onclick = () => { if (state.recording) return; state.segments = []; render(); };
+
+function showErr(el, msg) { el.textContent = msg; el.hidden = !msg; }
+
+/* ---------- envoi au serveur (dans l'ordre) ---------- */
+function send(blob, filename, label) {
+  const seg = addSegment(label);
+  const lang = currentLang();
+  state.queue = state.queue.then(async () => {
+    const fd = new FormData();
+    fd.append("audio", blob, filename);
+    fd.append("lang", lang);
+    try {
+      const r = await fetch(api("/api/transcribe"), { method: "POST", body: fd });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.detail || `Erreur ${r.status}`);
+      seg.text = j.text; seg.status = "done";
+    } catch (e) {
+      seg.text = "Échec : " + e.message; seg.status = "error";
+    }
+    render();
+  });
+}
+
+/* ---------- micro ---------- */
+let wakeLock = null, stream, recorder, chunkTimer, tickTimer, audioCtx, analyser, raf, chunkStart = 0;
+const pickMime = () => ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
+
+$("#recBtn").onclick = () => state.recording ? stopRec() : startRec();
+
+async function startRec() {
+  showErr($("#capErr"), "");
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showErr($("#capErr"), "Ce navigateur ne donne pas accès au micro ici. Ouvrez Kuma en http://localhost ou via une adresse https (voir README).");
+    return;
+  }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch { showErr($("#capErr"), isApp ? "Accès au micro refusé. Ouvrez Paramètres > Applications > Kuma > Autorisations > Micro, choisissez Autoriser." : "Accès au micro refusé. Autorisez le micro pour cette page dans les réglages du navigateur."); return; }
+  state.recording = true; state.startAt = performance.now();
+  $("#recBtn").classList.add("on"); $("#recBtn").setAttribute("aria-label", "Arrêter l'enregistrement");
+  $("#recIcon").innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
+  $("#recHint").textContent = "Enregistrement… appuyez pour arrêter.";
+  $("#clearBtn").disabled = true;
+  meterStart();
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
+  tickTimer = setInterval(() => $("#timer").textContent = fmt((performance.now() - state.startAt) / 1000), 250);
+  nextChunk();
+}
+
+// Chaque tranche est un fichier audio complet : on relance un enregistreur à chaque tranche.
+function nextChunk() {
+  const mime = pickMime();
+  recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  const parts = [];
+  const t0 = (performance.now() - state.startAt) / 1000;
+  recorder.ondataavailable = e => e.data.size && parts.push(e.data);
+  recorder.onstop = () => {
+    const t1 = (performance.now() - state.startAt) / 1000;
+    const type = recorder.mimeType || mime || "audio/webm";
+    const ext = type.includes("mp4") ? ".m4a" : type.includes("ogg") ? ".ogg" : ".webm";
+    if (parts.length) send(new Blob(parts, { type }), "micro" + ext, fmt(t0));
+    if (state.recording) nextChunk(); else cleanupStream();
+  };
+  recorder.start();
+  chunkTimer = setTimeout(() => recorder.state === "recording" && recorder.stop(), +$("#chunk").value * 1000);
+}
+
+function stopRec() {
+  state.recording = false;
+  try { wakeLock?.release(); } catch {} wakeLock = null;
+  clearTimeout(chunkTimer); clearInterval(tickTimer);
+  if (recorder?.state === "recording") recorder.stop(); else cleanupStream();
+  $("#recBtn").classList.remove("on"); $("#recBtn").setAttribute("aria-label", "Démarrer l'enregistrement");
+  $("#recIcon").innerHTML = '<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0h-2a5 5 0 0 1-10 0zM11 18h2v3h-2z"/>';
+  $("#recHint").textContent = "Enregistrement terminé. Vous pouvez reprendre ou générer le compte rendu.";
+  $("#clearBtn").disabled = false;
+}
+function cleanupStream() {
+  stream?.getTracks().forEach(t => t.stop());
+  cancelAnimationFrame(raf); audioCtx?.close(); audioCtx = null; $("#level").style.width = "0";
+}
+function meterStart() {
+  try {
+    audioCtx = new AudioContext();
+    analyser = audioCtx.createAnalyser(); analyser.fftSize = 512;
+    audioCtx.createMediaStreamSource(stream).connect(analyser);
+    const buf = new Uint8Array(analyser.fftSize);
+    const loop = () => {
+      analyser.getByteTimeDomainData(buf);
+      let peak = 0; for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
+      $("#level").style.width = Math.min(100, peak / 0.9) + "%";
+      raf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch {}
+}
+
+/* ---------- import de fichier ---------- */
+const drop = $("#drop"), fileIn = $("#file");
+drop.onclick = () => fileIn.click();
+drop.onkeydown = e => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), fileIn.click());
+fileIn.onchange = () => { [...fileIn.files].forEach(f => send(f, f.name, "fichier")); fileIn.value = ""; };
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => [...e.dataTransfer.files].forEach(f => send(f, f.name, "fichier")));
+
+/* ---------- compte rendu ---------- */
+$("#sumBtn").onclick = async () => {
+  showErr($("#sumErr"), "");
+  const btn = $("#sumBtn"); btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Rédaction…';
+  try {
+    const r = await fetch(api("/api/summarize"), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript: fullTranscript(), source_language: langLabel(), output_language: $("#outLang").value, context: $("#ctx").value })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.detail || `Erreur ${r.status}`);
+    state.summary = j.summary;
+    $("#summary").innerHTML = md(j.summary);
+    $("#copyBtn").disabled = false;
+  } catch (e) { showErr($("#sumErr"), e.message); }
+  btn.textContent = "Générer le compte rendu"; updateButtons();
+};
+
+function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function inline(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"); }
+function md(src) {
+  let html = "", list = false;
+  for (const raw of src.split("\n")) {
+    const line = raw.trim();
+    const li = line.match(/^[-*•]\s+(.*)/);
+    if (li) { if (!list) { html += "<ul>"; list = true; } html += `<li>${inline(li[1])}</li>`; continue; }
+    if (list) { html += "</ul>"; list = false; }
+    const h = line.match(/^#{1,4}\s+(.*)/);
+    if (h) html += `<h3>${inline(h[1])}</h3>`;
+    else if (line) html += `<p>${inline(line)}</p>`;
+  }
+  return html + (list ? "</ul>" : "");
+}
+
+$("#copyBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText(state.summary); $("#copyBtn").textContent = "Copié"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("#summary")); getSelection().removeAllRanges(); getSelection().addRange(r); $("#copyBtn").textContent = "Texte sélectionné"; }
+  setTimeout(() => $("#copyBtn").textContent = "Copier", 1800);
+};
+function exportText() {
+  const date = new Date().toLocaleString("fr-FR");
+  return `KUMA — ${date}\nLangue : ${langLabel()}\n${$("#ctx").value ? "Contexte : " + $("#ctx").value + "\n" : ""}\n` +
+    (state.summary ? `===== COMPTE RENDU =====\n${state.summary}\n\n` : "") +
+    `===== TRANSCRIPTION =====\n` +
+    state.segments.filter(s => s.status === "done").map(s => `[${s.label}] ${s.text}`).join("\n");
+}
+$("#copyAllBtn").onclick = async () => {
+  try { await navigator.clipboard.writeText(exportText()); $("#copyAllBtn").textContent = "Copié : collez dans WhatsApp, e-mail…"; }
+  catch { $("#copyAllBtn").textContent = "Copie impossible"; }
+  setTimeout(() => $("#copyAllBtn").textContent = "Tout copier", 2500);
+};
+$("#dlBtn").onclick = () => {
+  const txt = exportText();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([txt], { type: "text/plain;charset=utf-8" }));
+  a.download = `kuma-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.txt`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+</script>
+</body>
+</html>

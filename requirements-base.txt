@@ -1,0 +1,5 @@
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+anthropic>=0.40
+imageio-ffmpeg>=0.5

@@ -1,0 +1,12 @@
+{
+  "appId": "ml.kuma.transcription",
+  "appName": "Kuma",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

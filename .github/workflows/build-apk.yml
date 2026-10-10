@@ -1,0 +1,56 @@
+# Fabrique l'application Android (Kuma.apk) à chaque modification,
+# puis la publie dans l'onglet « Releases » du dépôt GitHub.
+name: Fabriquer l'APK Android
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Préparer le projet Android
+        working-directory: android
+        run: |
+          npm ci
+          rm -rf android
+          npm run android:create
+
+      - name: Compiler l'APK
+        working-directory: android/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../../Kuma.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kuma-apk
+          path: Kuma.apk
+
+      - name: Publier dans Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Kuma v1.0.${{ github.run_number }}
+          body: |
+            Application Android Kuma. Sur le téléphone, ouvrez cette page et touchez **Kuma.apk** pour l'installer.
+          files: Kuma.apk

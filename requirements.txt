@@ -1,0 +1,3 @@
+# Tout Kuma, y compris la vraie transcription (gros téléchargement, Linux/Mac/WSL)
+-r requirements-base.txt
+omnilingual-asr
